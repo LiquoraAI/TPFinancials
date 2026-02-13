@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>同行业对比看板 · 2021–2025</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <span class="header-badge">行业分析</span>
+      <h1>同行业对比看板</h1>
+      <p class="header-sub">2021 – 2025 · 多维度对比与结论</p>
+    </div>
+  </header>
+
+  <section class="filters">
+    <div class="filters-inner">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label>时间范围</label>
+          <div class="select-row">
+            <select id="yearFrom">
+              <option value="2021" selected>2021</option>
+              <option value="2022">2022</option>
+              <option value="2023">2023</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+            </select>
+        <span>–</span>
+            <select id="yearTo">
+              <option value="2021">2021</option>
+              <option value="2022">2022</option>
+              <option value="2023">2023</option>
+              <option value="2024">2024</option>
+              <option value="2025" selected>2025</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-group filter-group-companies">
+          <label>公司选择</label>
+          <div class="company-checkboxes" id="companyCheckboxes">
+            <label><input type="checkbox" value="A" checked /> 若羽臣</label>
+            <label><input type="checkbox" value="B" checked /> 丽人丽妆</label>
+            <label><input type="checkbox" value="C" checked /> 壹网壹创</label>
+            <label><input type="checkbox" value="D" checked /> 青木科技</label>
+            <label><input type="checkbox" value="E" checked /> 凯淳股份</label>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label>粒度</label>
+          <select id="granularity">
+            <option value="annual">年度</option>
+            <option value="quarterly">季度</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="main">
+    <nav class="tabs-nav" role="tablist">
+      <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-tab="overview">总体概览</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="finance">财务指标</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="valuation">估值对比</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="efficiency">效率与风险</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="summary">结论汇总</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="data-maint">数据维护</button>
+    </nav>
+
+    <div class="tabs-content">
+      <div class="tab-pane active" id="pane-overview" role="tabpanel">
+        <section class="module">
+          <h2><span class="module-num">01</span>总体概览</h2>
+          <div class="overview-chart-wrap">
+            <div id="chartOverview" class="echarts-container"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="tab-pane" id="pane-finance" role="tabpanel">
+        <section class="module">
+          <h2><span class="module-num">02</span>财务指标对比</h2>
+          <div class="chart-wrap"><div id="chartRevenue" class="echarts-container"></div></div>
+          <div class="chart-wrap"><div id="chartNetProfit" class="echarts-container"></div></div>
+          <div class="chart-wrap"><div id="chartMargin" class="echarts-container"></div></div>
+          <div class="chart-wrap"><div id="chartROE" class="echarts-container"></div></div>
+          <div class="table-wrap">
+            <table class="data-table" id="tableFinance"></table>
+          </div>
+        </section>
+      </div>
+
+      <div class="tab-pane" id="pane-valuation" role="tabpanel">
+        <section class="module">
+          <h2><span class="module-num">03</span>估值对比</h2>
+          <div class="chart-wrap"><div id="chartPE" class="echarts-container"></div></div>
+          <div class="chart-wrap"><div id="chartPB" class="echarts-container"></div></div>
+          <div class="chart-wrap"><div id="chartPS" class="echarts-container"></div></div>
+          <div class="table-wrap">
+            <table class="data-table" id="tableValuation"></table>
+          </div>
+        </section>
+      </div>
+
+      <div class="tab-pane" id="pane-efficiency" role="tabpanel">
+        <section class="module">
+          <h2><span class="module-num">04</span>效率 & 风险</h2>
+          <div class="charts-row">
+            <div class="chart-wrap"><div id="chartInventoryTurnover" class="echarts-container"></div></div>
+            <div class="chart-wrap"><div id="chartReceivablesTurnover" class="echarts-container"></div></div>
+            <div class="chart-wrap"><div id="chartLeverage" class="echarts-container"></div></div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="tableEfficiency"></table>
+          </div>
+        </section>
+      </div>
+
+      <div class="tab-pane" id="pane-data-maint" role="tabpanel">
+        <section class="module module-data-maint">
+          <h2><span class="module-num">06</span>数据维护</h2>
+          <p class="data-maint-desc">定期报告数据来自巨潮 cninfo，点击下方按钮拉取最新数据并下载 PDF 到本地。</p>
+          <p class="data-maint-path">PDF 保存位置：<code>report_fetcher/reports/</code>，按公司分子目录（如 <code>003010_若羽臣/</code>、<code>605136_丽人丽妆/</code>）。索引见项目根目录 <code>index.csv</code>。</p>
+          <div class="data-maint-actions">
+            <button type="button" class="btn-update" id="btnUpdateData">Update最新数据</button>
+            <span class="data-maint-status" id="dataMaintStatus"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table log-table" id="dataMaintLogTable">
+              <thead>
+                <tr>
+                  <th>公司</th>
+                  <th>状态</th>
+                  <th>说明</th>
+                  <th>时间</th>
+                </tr>
+              </thead>
+              <tbody id="dataMaintLogBody"></tbody>
+            </table>
+          </div>
+          <p class="data-maint-hint" id="dataMaintHint">使用主面板统一服务时，数据维护 API 已集成，无需单独启动。请用 <code>python server.py</code> 启动（项目根目录）。</p>
+        </section>
+      </div>
+
+      <div class="tab-pane" id="pane-summary" role="tabpanel">
+        <section class="module module-summary">
+          <h2><span class="module-num">05</span>结论汇总</h2>
+          <div class="summary-section">
+            <h3>总体结论</h3>
+            <div class="conclusions" id="overviewConclusions"></div>
+          </div>
+          <div class="summary-section">
+            <h3>估值结论</h3>
+            <p class="valuation-conclusion" id="valuationConclusion"></p>
+          </div>
+          <div class="summary-section">
+            <h3>风险提示</h3>
+            <div class="conclusions" id="riskConclusions"></div>
+          </div>
+          <div class="summary-block">
+            <h3>推荐重点关注</h3>
+            <ul id="summaryRecommend"></ul>
+          </div>
+          <div class="summary-block">
+            <h3>主要风险提示</h3>
+            <ul id="summaryRisks"></ul>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/mockData.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
