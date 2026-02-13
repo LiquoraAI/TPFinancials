@@ -377,9 +377,28 @@ body {
 .module-data-maint .btn-update:hover {
   background: var(--accent-hover);
 }
+.module-data-maint .btn-parse-force {
+  padding: 0.55rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.module-data-maint .btn-parse-force:hover {
+  background: var(--accent-soft);
+}
 .module-data-maint .data-maint-status {
   font-size: 0.875rem;
   color: var(--text-muted);
+}
+.module-data-maint .data-maint-parse {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-left: 0.25rem;
 }
 .module-data-maint .log-table .log-status {
   display: inline-block;
@@ -397,6 +416,30 @@ body {
   color: var(--text-muted);
 }
 .module-data-maint .data-maint-hint code { background: var(--bg-body); padding: 0.15rem 0.4rem; border-radius: 4px; }
+
+/* ========== 数据维护 tab 内底部日志黑窗（约 10 行高，可滚动）========== */
+.module-data-maint .bottom-log {
+  margin-top: 1.25rem;
+  border-radius: var(--radius-sm);
+  background: #1a1a1a;
+  color: #b0b0b0;
+  border: 1px solid #333;
+  overflow: hidden;
+  height: 11em;
+  max-height: 280px;
+}
+.module-data-maint .bottom-log-content {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-family: ui-monospace, "Consolas", "Monaco", monospace;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-all;
+  height: 100%;
+  overflow: auto;
+  display: block;
+}
 
 /* ========== 总体概览 ========== */
 .overview-chart-wrap {

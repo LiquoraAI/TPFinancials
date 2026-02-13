@@ -35,6 +35,7 @@ function getMockData(options) {
 
   const revenueBase = [3200, 2800, 2100, 1800, 1500];
   const profitBase = [420, 350, 180, 120, 90];
+  const totalAssetsBase = [2200, 2800, 1900, 1600, 1200];  /* 总资产基数(百万) */
   const data = {
     years,
     companies,
@@ -48,11 +49,13 @@ function getMockData(options) {
   companies.forEach((c, i) => {
     const rev = buildMockSeries(years, revenueBase[i], 8 + (i % 5));
     const profit = buildMockSeries(years, profitBase[i], 5 + (i % 4));
+    const totalAssets = buildMockSeries(years, totalAssetsBase[i], 6 + (i % 4));
     data.overview.revenue.push({ company: c.name, series: rev });
     data.overview.netProfit.push({ company: c.name, series: profit });
     data.finance[c.id] = {
       revenue: rev,
       netProfit: profit,
+      totalAssets,
       grossMargin: years.map((y, j) => ({ year: y, value: 58 + (i + j) % 12 })),
       netMargin: years.map((y, j) => ({ year: y, value: 10 + (i + j) % 8 })),
       roe: years.map((y, j) => ({ year: y, value: 12 + (i + j) % 10 })),

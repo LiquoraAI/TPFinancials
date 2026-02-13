@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>同行业对比看板 · 2021–2025</title>
+  <title>TP同行业对比看板 · 2021–2025</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -14,7 +14,7 @@
   <header class="header">
     <div class="header-inner">
       <span class="header-badge">行业分析</span>
-      <h1>同行业对比看板</h1>
+      <h1>TP上市公司行业对比看板</h1>
       <p class="header-sub">2021 – 2025 · 多维度对比与结论</p>
     </div>
   </header>
@@ -86,6 +86,7 @@
       <div class="tab-pane" id="pane-finance" role="tabpanel">
         <section class="module">
           <h2><span class="module-num">02</span>财务指标对比</h2>
+          <div class="chart-wrap"><div id="chartTotalAssets" class="echarts-container"></div></div>
           <div class="chart-wrap"><div id="chartRevenue" class="echarts-container"></div></div>
           <div class="chart-wrap"><div id="chartNetProfit" class="echarts-container"></div></div>
           <div class="chart-wrap"><div id="chartMargin" class="echarts-container"></div></div>
@@ -129,7 +130,9 @@
           <p class="data-maint-path">PDF 保存位置：<code>report_fetcher/reports/</code>，按公司分子目录（如 <code>003010_若羽臣/</code>、<code>605136_丽人丽妆/</code>）。索引见项目根目录 <code>index.csv</code>。</p>
           <div class="data-maint-actions">
             <button type="button" class="btn-update" id="btnUpdateData">Update最新数据</button>
+            <button type="button" class="btn-update btn-parse-force" id="btnParseForce" title="仅解析年报，忽略缓存，结果与现有季报/半年报合并">重新全部解析（仅年报）</button>
             <span class="data-maint-status" id="dataMaintStatus"></span>
+            <span class="data-maint-status data-maint-parse" id="dataMaintParse"></span>
           </div>
           <div class="table-wrap">
             <table class="data-table log-table" id="dataMaintLogTable">
@@ -145,6 +148,9 @@
             </table>
           </div>
           <p class="data-maint-hint" id="dataMaintHint">使用主面板统一服务时，数据维护 API 已集成，无需单独启动。请用 <code>python server.py</code> 启动（项目根目录）。</p>
+          <footer class="bottom-log" title="解析实时日志，可滚动">
+            <pre class="bottom-log-content" id="dataMaintParseLog"></pre>
+          </footer>
         </section>
       </div>
 

@@ -440,6 +440,43 @@ def append_failed(failed_path, row_dict, reason):
             w.writerow({k: row_dict.get(k, "") for k in headers})
 
 
+def load_all_rows_from_index(index_path, out_dir):
+    """
+    从 index.csv 加载已下载记录，返回与 normalize_report_df 同结构的 row 列表。
+    用于快速路径：无需请求数据源即可得到 all_rows，并据此计算 to_download。
+    """
+    path = Path(index_path)
+    if not path.exists():
+        return []
+    out_dir = Path(out_dir)
+    rows = []
+    try:
+        if pd is not None:
+            df = pd.read_csv(path, encoding="utf-8-sig", dtype=str)
+        else:
+            import csv
+            with open(path, "r", encoding="utf-8-sig", newline="") as f:
+                df = pd.DataFrame(list(csv.DictReader(f)))
+        for _, r in df.iterrows():
+            row = {
+                "stock_code": str(r.get("stock_code", "")).strip(),
+                "stock_name": str(r.get("stock_name", "")).strip(),
+                "category": str(r.get("category", "")).strip(),
+                "title": str(r.get("title", "")).strip(),
+                "publish_date": str(r.get("publish_date", "")).strip()[:10],
+                "url": str(r.get("pdf_url", "")).strip(),
+                "local_path": str(r.get("local_path", "")).strip(),
+            }
+            if not row["stock_code"]:
+                continue
+            full_path = out_dir / row["local_path"] if row["local_path"] else expected_local_path(row, out_dir)
+            row["_local_full_path"] = full_path
+            rows.append(row)
+    except Exception as e:
+        print("    [WARN] 读取 index.csv 失败: {}".format(e), file=sys.stderr)
+    return rows
+
+
 def run(out_dir, years, codes_override, categories, state_path, index_path, failed_path, log_collector=None):
     """主流程：拉列表 -> 解析 PDF URL -> 下载 -> 写 state 与 index。若传入 log_collector（list），则按公司追加日志并返回。"""
     out_dir = Path(out_dir)
@@ -460,56 +497,101 @@ def run(out_dir, years, codes_override, categories, state_path, index_path, fail
     downloaded = load_state(state_path)
     all_rows = []
     company_total = {}  # (code, name) -> 该公司在列表中的条数
+    use_fast_path = False
 
-    print("[report_fetcher] 开始拉取列表: 近 {} 年, 报告类型 {}".format(years, categories), file=sys.stderr)
-    print("[report_fetcher] 已存在 state 中的记录数: {} (跳过=之前已下载过, 不重复下)".format(len(downloaded)), file=sys.stderr)
+    # 快速路径：若 index 存在，先仅用本地 index + state + 文件存在性算 to_download；若无待下载则跳过所有网络请求
+    if index_path.exists():
+        index_rows = load_all_rows_from_index(index_path, out_dir)
+        if index_rows:
+            to_download = []
+            company_to_dl = {}
+            for row in index_rows:
+                key = unique_key(row)
+                path = row.get("_local_full_path") or expected_local_path(row, out_dir)
+                if key in downloaded and path.exists():
+                    continue
+                if key not in downloaded and path.exists():
+                    downloaded.add(key)
+                    continue
+                to_download.append((key, row))
+                code, name = row.get("stock_code"), row.get("stock_name")
+                company_to_dl[(code, name)] = company_to_dl.get((code, name), 0) + 1
+            for row in index_rows:
+                code, name = row.get("stock_code"), row.get("stock_name")
+                company_total[(code, name)] = company_total.get((code, name), 0) + 1
+            if not to_download:
+                all_rows = index_rows
+                use_fast_path = True
+                skipped_total = len(index_rows)
+                print("[report_fetcher] 快速路径: 使用 index.csv，本地文件均已存在，跳过网络请求", file=sys.stderr)
+                print("[report_fetcher] 列表共 {} 条, 全部已下载(跳过), 待下载 0 条".format(len(all_rows)), file=sys.stderr)
+                for (stock_code, stock_name) in company_total:
+                    total = company_total.get((stock_code, stock_name), 0)
+                    print("  [{} {}] 列表 {} 条 -> 跳过 {} 条(已下载过), 待下载 0 条".format(stock_code, stock_name, total, total), file=sys.stderr)
+                print("", file=sys.stderr)
 
-    for stock_name, stock_code in companies:
-        company_dir = out_dir / f"{stock_code}_{stock_name}"
-        company_dir.mkdir(parents=True, exist_ok=True)
-        company_total[(stock_code, stock_name)] = 0
+    if not use_fast_path:
+        print("[report_fetcher] 开始拉取列表: 近 {} 年, 报告类型 {}".format(years, categories), file=sys.stderr)
+        print("[report_fetcher] 已存在 state 中的记录数: {} (跳过=之前已下载过, 不重复下)".format(len(downloaded)), file=sys.stderr)
 
-        for category in categories:
-            random_sleep()
-            df = fetch_report_list_akshare(stock_code, category, start_str, end_str)
-            if df is None or df.empty:
-                continue
-            norm = normalize_report_df(df, stock_code, stock_name, category)
-            for _, row in norm.iterrows():
-                all_rows.append(row)
-                company_total[(stock_code, stock_name)] = company_total.get((stock_code, stock_name), 0) + 1
+        for stock_name, stock_code in companies:
+            company_dir = out_dir / f"{stock_code}_{stock_name}"
+            company_dir.mkdir(parents=True, exist_ok=True)
+            company_total[(stock_code, stock_name)] = 0
 
-    # 去重：仅当 state 中有记录且本地文件存在时才跳过，否则重新下载
-    to_download = []
-    company_to_dl = {}  # (code, name) -> 本次待下载条数
-    for row in all_rows:
-        key = unique_key(row)
-        if key in downloaded:
-            path = expected_local_path(row, out_dir)
-            if path.exists():
-                continue
-            downloaded.discard(key)
-            print("[report_fetcher] 状态有记录但本地无文件，将重新下载: {} {}".format(row.get("stock_code"), row.get("stock_name")), file=sys.stderr)
-        to_download.append((key, row))
-        code, name = row.get("stock_code"), row.get("stock_name")
-        company_to_dl[(code, name)] = company_to_dl.get((code, name), 0) + 1
+            for category in categories:
+                random_sleep()
+                df = fetch_report_list_akshare(stock_code, category, start_str, end_str)
+                if df is None or df.empty:
+                    continue
+                norm = normalize_report_df(df, stock_code, stock_name, category)
+                for _, row in norm.iterrows():
+                    all_rows.append(row)
+                    company_total[(stock_code, stock_name)] = company_total.get((stock_code, stock_name), 0) + 1
+
+        # 去重：仅当 state 中有记录且本地文件存在时才跳过，否则重新下载
+        to_download = []
+        company_to_dl = {}
+        for row in all_rows:
+            key = unique_key(row)
+            if key in downloaded:
+                path = expected_local_path(row, out_dir)
+                if path.exists():
+                    continue
+                downloaded.discard(key)
+                print("[report_fetcher] 状态有记录但本地无文件，将重新下载: {} {}".format(row.get("stock_code"), row.get("stock_name")), file=sys.stderr)
+            to_download.append((key, row))
+            code, name = row.get("stock_code"), row.get("stock_name")
+            company_to_dl[(code, name)] = company_to_dl.get((code, name), 0) + 1
+
+        skipped_total = len(all_rows) - len(to_download)
+        print("[report_fetcher] 列表共 {} 条, 其中已在 state 中(跳过) {} 条, 本次待下载 {} 条".format(len(all_rows), skipped_total, len(to_download)), file=sys.stderr)
+        for (stock_code, stock_name) in company_total:
+            total = company_total.get((stock_code, stock_name), 0)
+            to_dl = company_to_dl.get((stock_code, stock_name), 0)
+            sk = max(0, total - to_dl)
+            print("  [{} {}] 列表 {} 条 -> 跳过 {} 条(已下载过), 待下载 {} 条".format(stock_code, stock_name, total, sk, to_dl), file=sys.stderr)
+        print("", file=sys.stderr)
 
     company_downloaded = {}
     company_failed = {}
 
-    skipped_total = len(all_rows) - len(to_download)
-    print("[report_fetcher] 列表共 {} 条, 其中已在 state 中(跳过) {} 条, 本次待下载 {} 条".format(len(all_rows), skipped_total, len(to_download)), file=sys.stderr)
-    for (stock_code, stock_name) in company_total:
-        total = company_total.get((stock_code, stock_name), 0)
-        to_dl = company_to_dl.get((stock_code, stock_name), 0)
-        sk = max(0, total - to_dl)
-        print("  [{} {}] 列表 {} 条 -> 跳过 {} 条(已下载过), 待下载 {} 条".format(stock_code, stock_name, total, sk, to_dl), file=sys.stderr)
-    print("", file=sys.stderr)
+    if not use_fast_path:
+        skipped_total = len(all_rows) - len(to_download)
+        print("[report_fetcher] 列表共 {} 条, 其中已在 state 中(跳过) {} 条, 本次待下载 {} 条".format(len(all_rows), skipped_total, len(to_download)), file=sys.stderr)
+        for (stock_code, stock_name) in company_total:
+            total = company_total.get((stock_code, stock_name), 0)
+            to_dl = company_to_dl.get((stock_code, stock_name), 0)
+            sk = max(0, total - to_dl)
+            print("  [{} {}] 列表 {} 条 -> 跳过 {} 条(已下载过), 待下载 {} 条".format(stock_code, stock_name, total, sk, to_dl), file=sys.stderr)
+        print("", file=sys.stderr)
 
-    # 通过巨潮 hisAnnouncement/query 获取 announcementId -> PDF URL，避免逐条解析详情页
-    aid_to_pdf = build_announcement_id_to_pdf_url(to_download, start_str, end_str)
-    if aid_to_pdf:
-        print("[report_fetcher] 已从巨潮接口解析 {} 条 PDF 链接".format(len(aid_to_pdf)), file=sys.stderr)
+    # 仅在有待下载时请求巨潮接口并执行下载
+    aid_to_pdf = {}
+    if to_download:
+        aid_to_pdf = build_announcement_id_to_pdf_url(to_download, start_str, end_str)
+        if aid_to_pdf:
+            print("[report_fetcher] 已从巨潮接口解析 {} 条 PDF 链接".format(len(aid_to_pdf)), file=sys.stderr)
 
     for key, row in to_download:
         title = (row.get("title") or "").strip()
