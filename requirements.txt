@@ -7,3 +7,8 @@ requests>=2.26.0
 tqdm>=4.62.0
 python-dateutil>=2.8.0
 pdfplumber>=0.10.0
+
+# AI 解析（可选）：未安装时 AI 兜底不生效，规则解析照常
+openai>=1.0.0
+# 从 .env 加载 DASHSCOPE_API_KEY 等（与 Liquora-chatbot 一致）
+python-dotenv>=1.0.0

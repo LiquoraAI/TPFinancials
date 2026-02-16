@@ -18,8 +18,8 @@ DEFAULT_CATEGORIES = ["一季报", "半年报", "三季报", "年报"]
 # 默认拉取近年数
 DEFAULT_YEARS = 5
 
-# 默认输出目录
-DEFAULT_OUT_DIR = "reports"
+# 默认输出目录（可改为绝对路径，如 OneDrive 下的目录）
+DEFAULT_OUT_DIR = "/Users/leixu/Library/CloudStorage/OneDrive-个人/AI_experiments/TPfinancials/reports"
 
 # 状态文件目录与文件名
 STATE_DIR = "state"

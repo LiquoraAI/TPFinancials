@@ -46,6 +46,16 @@ def create_app():
     @app.route("/api/update-reports", methods=["POST"])
     def api_update_reports():
         cwd = os.getcwd()
+        categories_override = None
+        try:
+            from flask import request
+            data = request.get_json(silent=True) or {}
+            if data.get("granularity") == "annual":
+                categories_override = ["年报"]
+            elif isinstance(data.get("categories"), list) and data["categories"]:
+                categories_override = data["categories"]
+        except Exception:
+            pass
         try:
             os.chdir(REPORT_FETCHER_DIR)
             if str(REPORT_FETCHER_DIR) not in sys.path:
@@ -67,12 +77,13 @@ def create_app():
             index_path = root / INDEX_CSV
             failed_path = root / FAILED_CSV
             log_entries = []
+            categories = categories_override if categories_override is not None else DEFAULT_CATEGORIES
             # 第一步：下载 PDF
             run(
                 out_dir=out_dir,
                 years=DEFAULT_YEARS,
                 codes_override=None,
-                categories=DEFAULT_CATEGORIES,
+                categories=categories,
                 state_path=state_path,
                 index_path=index_path,
                 failed_path=failed_path,

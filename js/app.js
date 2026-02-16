@@ -422,7 +422,14 @@
         if (hintEl) hintEl.style.display = "none";
         var parseEl = document.getElementById("dataMaintParse");
         if (parseEl) parseEl.textContent = "";
-        fetch(DATA_MAINT_API_BASE + "/api/update-reports", { method: "POST", headers: { "Content-Type": "application/json" } })
+        var granularity = document.getElementById("granularity") ? document.getElementById("granularity").value : "annual";
+        var body = { granularity: granularity };
+        if (granularity === "annual") body.categories = ["年报"];
+        fetch(DATA_MAINT_API_BASE + "/api/update-reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
           .then(function (r) { return r.json(); })
           .then(function (data) {
             if (statusEl) statusEl.textContent = data.ok ? "更新完成" : (data.error || "更新失败");

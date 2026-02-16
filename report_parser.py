@@ -33,6 +33,9 @@ RECORD_INDICATOR_KEYS = [
     "operating_cash_flow", "cash_and_equivalents",
 ]
 
+# 关键 KPI：规则未抽到时可尝试 AI 语义对齐补全
+KEY_INDICATORS_FOR_AI_FALLBACK = ("revenue", "net_profit")
+
 
 def _parse_number_cell(s):
     """从单元格字符串解析数字：去逗号、空格，处理 万/亿，返回 float 或 None。"""
@@ -129,13 +132,27 @@ def _extract_indicators_from_pdf(pdf_path):
                                         if v is not None:
                                             out[field] = v
                                             break
-                                    if out[field] is not None:
-                                        break
+                                if out[field] is not None:
+                                    break
                                 if out[field] is not None:
                                     break
     except Exception as e:
         if __name__ == "__main__":
             print("    [WARN] PDF 解析异常 {}: {}".format(pdf_path.name[:30], e), file=sys.stderr)
+
+    # AI 语义对齐兜底：规则未抽到关键 KPI 时，用 LLM 解析表格补全
+    if any(out.get(k) is None for k in KEY_INDICATORS_FOR_AI_FALLBACK):
+        try:
+            from ai_table_mapper import get_tables_from_pdf, map_tables_to_kpi_with_ai
+            tables = get_tables_from_pdf(pdf_path)
+            if tables:
+                ai_result = map_tables_to_kpi_with_ai(tables)
+                for k, v in ai_result.items():
+                    if k in RECORD_INDICATOR_KEYS and out.get(k) is None and v is not None:
+                        out[k] = v
+        except Exception:
+            pass
+
     return out
 
 

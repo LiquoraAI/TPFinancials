@@ -130,7 +130,7 @@
           <p class="data-maint-path">PDF 保存位置：<code>report_fetcher/reports/</code>，按公司分子目录（如 <code>003010_若羽臣/</code>、<code>605136_丽人丽妆/</code>）。索引见项目根目录 <code>index.csv</code>。</p>
           <div class="data-maint-actions">
             <button type="button" class="btn-update" id="btnUpdateData">Update最新数据</button>
-            <button type="button" class="btn-update btn-parse-force" id="btnParseForce" title="仅解析年报，忽略缓存，结果与现有季报/半年报合并">重新全部解析（仅年报）</button>
+            <button type="button" class="btn-update btn-parse-force" id="btnParseForce" title="规则解析 + AI 语义对齐补全（规则未抽到关键 KPI 时调用 LLM），仅年报，忽略缓存">AI 解析</button>
             <span class="data-maint-status" id="dataMaintStatus"></span>
             <span class="data-maint-status data-maint-parse" id="dataMaintParse"></span>
           </div>
